@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use aide::{
     axum::{routing::get_with, ApiRouter, IntoApiResponse},
     openapi,
@@ -15,14 +17,14 @@ use serde::{Deserialize, Serialize};
 static OPENAPI_JSON: OnceCell<String> = OnceCell::new();
 static OPENAPI_YAML: OnceCell<String> = OnceCell::new();
 
-async fn serve_json(Extension(api): Extension<openapi::OpenApi>) -> impl IntoApiResponse {
+async fn serve_json(Extension(api): Extension<Arc<openapi::OpenApi>>) -> impl IntoApiResponse {
     OPENAPI_JSON
-        .get_or_init(|| serde_json::to_string(&api).unwrap())
+        .get_or_init(|| serde_json::to_string(api.as_ref()).unwrap())
         .as_str()
 }
-async fn serve_yaml(Extension(api): Extension<openapi::OpenApi>) -> impl IntoApiResponse {
+async fn serve_yaml(Extension(api): Extension<Arc<openapi::OpenApi>>) -> impl IntoApiResponse {
     OPENAPI_YAML
-        .get_or_init(|| serde_yaml::to_string(&api).unwrap())
+        .get_or_init(|| serde_yaml::to_string(api.as_ref()).unwrap())
         .as_str()
 }
 
@@ -104,7 +106,7 @@ async fn main() {
         .route("/openapi.yaml", get(serve_yaml))
         .route("/redoc", Redoc::new("/openapi.json").axum_route())
         .finish_api(&mut api)
-        .layer(Extension(api));
+        .layer(Extension(Arc::new(api)));
 
     Server::bind(&addr)
         .serve(routes.into_make_service())
