@@ -8,7 +8,11 @@ use axum::{routing::get, Json, Server};
 
 use once_cell::sync::OnceCell;
 
-use schemars::JsonSchema;
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{InstanceType, Schema, SchemaObject},
+    JsonSchema,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -44,18 +48,49 @@ fn get_v1_router() -> ApiRouter {
     )
 }
 
-#[derive(Deserialize, Serialize, JsonSchema)]
+#[derive(Deserialize, Serialize)]
 struct Foo {
     a: u8,
-    b: String,
+    b: Option<String>,
     c: Vec<f64>,
+}
+
+impl JsonSchema for Foo {
+    fn schema_name() -> String {
+        "Foo".to_owned()
+    }
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        {
+            let mut schema_object = SchemaObject {
+                instance_type: Some(InstanceType::Object.into()),
+                ..Default::default()
+            };
+            let object_validation = schema_object.object();
+            object_validation.properties.insert("a".to_owned(), {
+                let mut schema = gen.subschema_for::<Option<u16>>();
+                if let Schema::Object(ref mut obj) = schema {
+                    obj.metadata().description = Some("parameter 'a'".to_owned());
+                }
+                schema
+            });
+            object_validation.required.insert("a".to_owned());
+            object_validation
+                .properties
+                .insert("b".to_owned(), gen.subschema_for::<Option<String>>());
+            object_validation
+                .properties
+                .insert("c".to_owned(), gen.subschema_for::<Vec<f64>>());
+            object_validation.required.insert("c".to_owned());
+            Schema::Object(schema_object)
+        }
+    }
 }
 
 impl Foo {
     fn get_example() -> Self {
         Foo {
             a: 1,
-            b: "foo".to_string(),
+            b: Some("foo".to_string()),
             c: vec![0.0, 0.1, 0.2],
         }
     }
