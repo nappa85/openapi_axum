@@ -8,11 +8,7 @@ use axum::{routing::get, Json, Server};
 
 use once_cell::sync::OnceCell;
 
-use schemars::{
-    gen::SchemaGenerator,
-    schema::{InstanceType, Schema, SchemaObject},
-    JsonSchema,
-};
+use schemars::JsonSchema;
 
 use serde::{Deserialize, Serialize};
 
@@ -40,50 +36,42 @@ fn get_v1_router() -> ApiRouter {
             o.id("foo")
                 .description("Example method")
                 .tag("bar")
-                .response_with::<200, Json<Foo>, _>(|res| {
-                    res.description("successful operation")
-                        .example(Foo::get_example())
-                })
+                .response_with::<200, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<201, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<202, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<203, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<204, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<205, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<206, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<207, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<208, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<209, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<210, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<211, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<212, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<213, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<214, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<215, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<216, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<217, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<218, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<219, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<220, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<221, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<222, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<223, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<224, Json<Foo>, _>(|res| res.description("successful operation"))
+                .response_with::<225, Json<Foo>, _>(|res| res.description("successful operation"))
         }),
     )
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, JsonSchema)]
+#[schemars(example = "Foo::get_example")]
 struct Foo {
     a: u8,
     b: Option<String>,
     c: Vec<f64>,
-}
-
-impl JsonSchema for Foo {
-    fn schema_name() -> String {
-        "Foo".to_owned()
-    }
-    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
-        {
-            let mut schema_object = SchemaObject {
-                instance_type: Some(InstanceType::Object.into()),
-                ..Default::default()
-            };
-            let object_validation = schema_object.object();
-            object_validation.properties.insert("a".to_owned(), {
-                let mut schema = gen.subschema_for::<Option<u16>>();
-                if let Schema::Object(ref mut obj) = schema {
-                    obj.metadata().description = Some("parameter 'a'".to_owned());
-                }
-                schema
-            });
-            object_validation.required.insert("a".to_owned());
-            object_validation
-                .properties
-                .insert("b".to_owned(), gen.subschema_for::<Option<String>>());
-            object_validation
-                .properties
-                .insert("c".to_owned(), gen.subschema_for::<Vec<f64>>());
-            object_validation.required.insert("c".to_owned());
-            Schema::Object(schema_object)
-        }
-    }
 }
 
 impl Foo {
@@ -121,6 +109,18 @@ async fn main() {
             ..openapi::Server::default()
         }],
         components: Some(openapi::Components {
+            schemas: {
+                let mut gen = schemars::gen::SchemaGenerator::default();
+                [(
+                    Foo::schema_name(),
+                    openapi::SchemaObject {
+                        json_schema: Foo::json_schema(&mut gen),
+                        external_docs: None,
+                        example: None,
+                    },
+                )]
+                .into()
+            },
             security_schemes: [(
                 "my_auth_key".to_string(),
                 openapi::ReferenceOr::Item(openapi::SecurityScheme::ApiKey {
